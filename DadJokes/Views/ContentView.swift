@@ -10,14 +10,14 @@ import SwiftUI
 struct ContentView: View {
     
     // MARK: Stored properties
-
+    
     //Detect when an app moves between foreground, background and inactive states.
     @Environment(\.scenePhase) var scenePhase
     
     
     @State var currentJoke: DadJoke = DadJoke(id: "",
-                                       joke: "Knock, knock...",
-                                       status: 0)
+                                              joke: "Knock, knock...",
+                                              status: 0)
     
     // This will keep track of our list of favourite jokes
     @State var favourites: [DadJoke] = []   // empty list to start
@@ -42,7 +42,7 @@ struct ContentView: View {
             
             Image(systemName: "heart.circle")
                 .font(.largeTitle)
-                //                      CONDITION                        true   false
+            //                      CONDITION                        true   false
                 .foregroundColor(currentJokeAddedToFavourites == true ? .red : .secondary)
                 .onTapGesture {
                     
@@ -54,7 +54,7 @@ struct ContentView: View {
                         
                         // Record that we have marked this as a favourite
                         currentJokeAddedToFavourites = true
-
+                        
                     }
                     
                 }
@@ -90,7 +90,7 @@ struct ContentView: View {
             }
             
             Spacer()
-                        
+            
         }
         // When the app opens, get a new joke from the web service
         .task {
@@ -107,6 +107,8 @@ struct ContentView: View {
             await loadNewJoke()
             
             print("I tried to load a new joke")
+            
+            loadFavourites()
         }
         .onChange(of: scenePhase) {newPhase in
             
@@ -169,11 +171,59 @@ struct ContentView: View {
             // populates
             print(error)
         }
-
+        
     }
     
+    func persistFavourites() {
+        
+        let filename = getDocumentsDirectory().appendingPathComponent(savedFavouritesLabel)
+        print(filename)
+        
+        
+        do {
+            
+            let encoder = JSONEncoder()
+            
+            encoder.outputFormatting = .prettyPrinted
+            
+            let data = try encoder.encode(favourites)
+            
+            try data.write(to: filename, options: [.atomicWrite, .completeFileProtection])
+            
+            print("saved data to the satements directory successfully")
+            print("=======")
+            print(String(data: data, encoding: .utf8)!)
+            
+        } catch {
+            print("Unable to wirte list of favourites to the Documents directory.")
+            print("=======")
+            print(error.localizedDescription)
+            
+        }
+    }
+    
+    func loadFavourites() {
+        let filename = getDocumentsDirectory().appendingPathComponent(savedFavouritesLabel)
+        print(filename)
+        
+        do{
+            
+            let data = try Data(contentsOf: filename)
+            
+            print("Read data to the satements directory successfully")
+            print("=======")
+            print(String(data: data, encoding: .utf8)!)
+            
+            favourites = try JSONDecoder().decode([DadJoke].self, from: data)
+            
+        } catch {
+            print("Could not load the data form the stored JSON file")
+            print("=====")
+            print(error.localizedDescription)
+            
+        }
+    }
 }
-
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
